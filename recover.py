@@ -1,43 +1,32 @@
 #from mtk.utils import get_sundays
 from mtk.utils.cmd import exec_cmd
-from pathlib import Path
-from time import strptime
-from mtk.const import C
-import os.path
-#import datetime
-from datetime import datetime
-import shutil 
-import  re
-import os
 from mtk.backup import XtraBackupDir
+from pathlib import Path
+import shutil 
+
 
 #全局的变量
 work_path='/data0/recover_work'
 recover_path=Path(work_path)    
 inr_dirs=XtraBackupDir(work_path).incr_dirs()
-#cmd_base="--redo-only --apply-log  --target-dir={}".format(recover_path / 'base')
 option="--redo-only --apply-log-only"
 cmd_base="  --target-dir={}".format(recover_path / 'base')
 #cmd_one_inr=" --incremental-basedir=/data0/recover_work/base  --target-dir={}".format(recover_path/inr_dirs[0])
 cmd_inrs=" --target-dir={}  --incremental-dir={} " #.format(work_path/inr_dirs[index-2],work_path/inr_dirs[index-1])
 
 
-def recover_reday(in_path,day):
+def copy_backup_dir_ok(in_path,day):
+    xbd= XtraBackupDir(in_path)
     back_path= XtraBackupDir(in_path).path
-#    back_path=xbd.path
-    if  os.path.exists(work_path):
-        
-        print(work_path)
+    if  recover_path.exists(): #判断recover目录是否存在，不存在的话创建
+        print(recover_path)
     else:
-        os.makedirs(work_path)
-    
-    if xbd.base.exists():
+        recover_path.mkdir(parents=True, exist_ok=True)
+    if xbd.base.exists():       # 判断备份目录是否存在 
         shutil.copytree(xbd.base,'/data0/recover_work/base')
-
         for i in  xbd.incr_dirs(day):
-            inr_work_path=os.path.join('/data0/recover_work/',i)
-            shutil.copytree(back_path/i,inr_work_path)
-            print(i)
+            shutil.copytree(back_path/i,recover_path/i)
+        return True
     else:
         print('false path:',back_path)
         return False
@@ -153,7 +142,7 @@ if  __name__== '__main__' :
 work_path='/data0/recover_work'
 port=3307
 cmd_init="xtrabackup --prepare  --socket=/tmp/mysql_{}.sock ".format(port)
-#in_path='/data0/backup/xtrabackup/2018-06-24_2018-06-30/3307/'
+in_path='/data0/backup/xtrabackup/2018-06-24_2018-06-30/3307/'
 day='2018-06-28'
 inr_recover(port,day)
 
